@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ConsoleArgs": {
+      "commandName": "Project",
+      "commandLineArgs": "-i = \"myfile is in the west.in\" , \"This is another file\" , \"test\" --o = outfile.out"
+    }
+  }
+}

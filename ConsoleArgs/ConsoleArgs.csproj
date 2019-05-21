@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\..\..\Documents\GitHub\XML-To-Data-Class\XMLToDataClass\CommandSettings.cs" Link="CommandSettings.cs" />
+  </ItemGroup>
+
+</Project>
