@@ -50,10 +50,7 @@ namespace System
 		/// <exception cref="ArgumentNullException"><paramref name="usage"/> is a null reference.</exception>
 		public Usage(string usage)
 		{
-			if (usage == null)
-				throw new ArgumentNullException("usage");
-
-			mUsageStatement = usage;
+			mUsageStatement = usage ?? throw new ArgumentNullException("usage");
 		}
 
 		/// <summary>
@@ -724,13 +721,13 @@ namespace System
 			/// </summary>
 			private void TokenizeCommandLine()
 			{
-				// -(-)?([A-Za-z][A-Za-z0-9]*)+( )*(=)?( )*(\"([^\"]*)\"|([^-,\s][^,\s]*)|)((\s)*,(\s)*(\"([^\"]*)\"|([^,\s]*)))*
+				// -(-)?([A-Za-z][A-Za-z0-9]*)+((( )*\=( )*|( ))(\"([^\"]*)\"|([^-,\s][^,\s]*))((\s)*,(\s)*(\"([^\"]*)\"|([^,\s]*)))*)?
 				string pattern = " -(-)?" + // Opening --
 					"(?<tag>[\\p{Lu}\\p{Ll}\\p{Lt}\\p{Lm}\\p{Lo}][\\p{Lu}\\p{Ll}\\p{Lt}\\p{Lm}\\p{Lo}\\p{Nl}\\p{Mn}\\p{Mc}\\p{Nd}\\p{Pc}\\p{Cf}]*)+" + // tag
-					"(\\s)*(=)?(\\s)*" + // ' = ' option
+					"(((\\s)*\\=(\\s)*|(\\s))" + // ' = ' option
 										 //"(?<value>\"[^\"]*\"|([^-,\\s][^,\\s]*)|)" + // 1st value.
-					"(\"(?<value>[^\"]*)\"|(?<value>[^-,\\s][^,\\s]*)|)" + // 1st value.
-					"((\\s)*,(\\s)*(\"(?<value>[^\"]*)\"|(?<value>[^,\\s]*)|))*"; // other values.
+					"(\"(?<value>[^\"]*)\"|(?<value>[^-,\\s][^,\\s]*))" + // 1st value.
+					"((\\s)*,(\\s)*(\"(?<value>[^\"]*)\"|(?<value>[^,\\s]*)))*)?"; // other values.
 				Regex r = new Regex(pattern, RegexOptions.Singleline|RegexOptions.ExplicitCapture);
 
 				Match m = r.Match(mCommandLine);
