@@ -14,7 +14,7 @@ using System;
 
 namespace ConsoleArgsCoreTests.Data
 {
-	[Usage("Usage: Test.exe -i <int>,<int>,<int> -q <int> -w <int>")]
+	[Usage("IntegerSettings Test", "Test.exe -i <int>,<int>,<int> -q <int> -w <int>")]
 	public class IntegerSettings
 	{
 		[Argument('i', "List of integers.", Word = "input")]

@@ -14,7 +14,7 @@ using System;
 
 namespace ConsoleArgsCoreTests.Data
 {
-	[Usage("Usage: Test.exe -a --b -c --apple -baby --cardinals")]
+	[Usage("BooleanFlag Test", "Test.exe -a --b -c --apple -baby --cardinals")]
 	public class BooleanFlag
 	{
 		[Argument('a', "True if the test has an apple, false otherwise.", Word ="apple")]

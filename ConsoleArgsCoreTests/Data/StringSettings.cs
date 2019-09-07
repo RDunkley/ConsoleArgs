@@ -14,7 +14,7 @@ using System;
 
 namespace ConsoleArgsCoreTests.Data
 {
-	[Usage("Usage: Test.exe -i=test.exe -o output.exe -c config1,config2")]
+	[Usage("StringSettings Test", "Test.exe -i=test.exe -o output.exe -c config1,config2")]
 	public class StringSettings
 	{
 		[Argument('i', "Input file", Word ="input")]
