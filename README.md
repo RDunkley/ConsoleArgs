@@ -27,7 +27,7 @@ This attribute goes on the class itself. It allows you to specify the usage of t
 
 Example:
 
-[Usage("Reads an XML file and generates C# data classes to give an in memory representation of the data. Also will add additional parsing constraints to validate the data as it is parsed into memory.", "XMLToDataClass.exe [OPTIONS] [-e <settingsfile.x2dsettings>] [-n <namespace>] [-p <projectname>] [-s <solutionname>] [-c <configfile>] -i <xmlfilepath> -o <outputfolder>")]
+[Usage("Reads an XML file and generates C# data classes.", "XMLToDataClass.exe [-g] [-e <settingsfile.x2dsettings>] -i <xmlfilepath> -o <outputfolder>")]
 public class CommandSettings
 {
 	...
@@ -42,7 +42,7 @@ For Example:
 [Argument('i', "Input file that will be processed. Can be any input file.", Word = "input")]
 public string InputFile { get; set; }
 
-[Argument('h', "Preserve Hierarchy. XML elements with the same name with different parents are considered different elements. Otherwise they are considered the same.", Word = "hierarchy")]
+[Argument('h', "Preserve Hierarchy.", Word = "hierarchy")]
 public bool PreserveHierarchy { get; set; }
 
 When the class is passed into the Populate method it will store true in 'PreserveHierarchy' if a '-h' argument was found. It will also store a string value in 'InputFile' if a '-i' is found followed by a value. The value can be attached using an '=' character or a space. So both of these lines would be valid:
