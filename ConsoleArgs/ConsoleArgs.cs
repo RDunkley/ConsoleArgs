@@ -4,7 +4,7 @@
 // Description: This class uses reflection to analyze a class for attributes that it uses to pull arguments from the command line
 //              and place the arguments in the properties of the class.
 //********************************************************************************************************************************
-// Copyright © Richard Dunkley 2019
+// Copyright © Richard Dunkley 2022
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
 // License. You may obtain a copy of the License at: http://www.apache.org/licenses/LICENSE-2.0  Unless required by applicable
@@ -13,6 +13,7 @@
 // limitations under the License.
 //********************************************************************************************************************************
 using System.Collections.Generic;
+using System.Globalization;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -658,6 +659,140 @@ namespace System
 			}
 
 			/// <summary>
+			///   Converts a binary string to a binary value.
+			/// </summary>
+			/// <param name="value">Binary string to be converted. Must not include trailing 'b'.</param>
+			/// <param name="numBits">Number of bits in the value to be converted.</param>
+			/// <returns>Unsigned long containing the converted value.</returns>
+			/// <exception cref="OverflowException">The binary value provided is larger than the number of bits allowed.</exception>
+			/// <exception cref="FormatException"><paramref name="value"/> contains a character that is not a 1 or 0.</exception>
+			/// <exception cref="ArgumentException"><paramref name="numBits"/> is less than 1 or greater than 64.</exception>
+			private ulong ConvertBinaryNumber(string value, int numBits)
+            {
+				if (numBits < 1 || numBits > 64)
+					throw new ArgumentException($"The number of bits provided ({numBits}) is less than 1 or greater than 64.");
+				if (value.Length > numBits)
+					throw new OverflowException($"The binary value provided ({value}) is larger than the number of bits allowed for this type ({numBits}).");
+
+				ulong val = 0;
+				for (int i = 0; i < value.Length; i++)
+                {
+					if (value[i] == '1')
+					{
+						val |= 1;
+					}
+					else if (value[i] == '0')
+					{
+						// do nothing;
+					}
+					else
+					{
+						throw new FormatException($"The binary value provided ({value}) contains a character ({value[i]}) that is not a 1 or 0.");
+					}
+
+					if(i != value.Length - 1)
+						val <<= 1;
+                }
+
+				return val;
+            }
+
+			/// <summary>
+			///   Converts a string value to the specified type.
+			/// </summary>
+			/// <param name="value">String representation of the value to be converted.</param>
+			/// <param name="type">Type to convert the value to.</param>
+			/// <returns>Object of the converted value.</returns>
+			private object ConvertValue(string value, Type type)
+            {
+				if (type == typeof(byte))
+				{
+					if(value.Length > 1 && char.ToLower(value[value.Length - 1]) == 'b')
+                    {
+						// Number is a binary number (01101b).
+						return (byte)ConvertBinaryNumber(value.Substring(0, value.Length - 1).Replace("_", ""), 8);
+                    }
+					else if (value.Length > 1 && char.ToLower(value[value.Length - 1]) == 'h')
+					{
+						// Number is a hexadecimal type 1 number (FFh).
+						return byte.Parse(value.Substring(0, value.Length - 1).Replace("_", ""), NumberStyles.AllowHexSpecifier);
+					}
+					if (value.Length > 2 && value[0] == '0' && char.ToLower(value[1]) == 'x')
+					{
+						// Number is specified as a hexadecimal type 2 number (0xFF).
+						return byte.Parse(value.Substring(2).Replace("_", ""), NumberStyles.AllowHexSpecifier);
+					}
+
+					// Attempt to parse the number as just an integer.
+					return byte.Parse(value.Replace("_", ""), NumberStyles.Integer | NumberStyles.AllowThousands);
+				}
+				if (type == typeof(ushort))
+				{
+					if (value.Length > 1 && char.ToLower(value[value.Length - 1]) == 'b')
+					{
+						// Number is a binary number (01101b).
+						return (ushort)ConvertBinaryNumber(value.Substring(0, value.Length - 1).Replace("_", ""), 16);
+					}
+					else if (value.Length > 1 && char.ToLower(value[value.Length - 1]) == 'h')
+					{
+						// Number is a hexadecimal type 1 number (FFh).
+						return ushort.Parse(value.Substring(0, value.Length - 1).Replace("_", ""), NumberStyles.AllowHexSpecifier);
+					}
+					if (value.Length > 2 && value[0] == '0' && char.ToLower(value[1]) == 'x')
+					{
+						// Number is specified as a hexadecimal type 2 number (0xFF).
+						return ushort.Parse(value.Substring(2).Replace("_", ""), NumberStyles.AllowHexSpecifier);
+					}
+
+					// Attempt to parse the number as just an integer.
+					return ushort.Parse(value.Replace("_", ""), NumberStyles.Integer | NumberStyles.AllowThousands);
+				}
+				if (type == typeof(uint))
+				{
+					if (value.Length > 1 && char.ToLower(value[value.Length - 1]) == 'b')
+					{
+						// Number is a binary number (01101b).
+						return (uint)ConvertBinaryNumber(value.Substring(0, value.Length - 1).Replace("_", ""), 32);
+					}
+					else if (value.Length > 1 && char.ToLower(value[value.Length - 1]) == 'h')
+					{
+						// Number is a hexadecimal type 1 number (FFh).
+						return uint.Parse(value.Substring(0, value.Length - 1).Replace("_", ""), NumberStyles.AllowHexSpecifier);
+					}
+					if (value.Length > 2 && value[0] == '0' && char.ToLower(value[1]) == 'x')
+					{
+						// Number is specified as a hexadecimal type 2 number (0xFF).
+						return uint.Parse(value.Substring(2).Replace("_", ""), NumberStyles.AllowHexSpecifier);
+					}
+
+					// Attempt to parse the number as just an integer.
+					return uint.Parse(value.Replace("_", ""), NumberStyles.Integer | NumberStyles.AllowThousands);
+				}
+				if (type == typeof(ulong))
+				{
+					if (value.Length > 1 && char.ToLower(value[value.Length - 1]) == 'b')
+					{
+						// Number is a binary number (01101b).
+						return ConvertBinaryNumber(value.Substring(0, value.Length - 1).Replace("_", ""), 64);
+					}
+					else if (value.Length > 1 && char.ToLower(value[value.Length - 1]) == 'h')
+					{
+						// Number is a hexadecimal type 1 number (FFh).
+						return ulong.Parse(value.Substring(0, value.Length - 1).Replace("_", ""), NumberStyles.AllowHexSpecifier);
+					}
+					if (value.Length > 2 && value[0] == '0' && char.ToLower(value[1]) == 'x')
+					{
+						// Number is specified as a hexadecimal type 2 number (0xFF).
+						return ulong.Parse(value.Substring(2).Replace("_", ""), NumberStyles.AllowHexSpecifier);
+					}
+
+					// Attempt to parse the number as just an integer.
+					return ulong.Parse(value.Replace("_", ""), NumberStyles.Integer | NumberStyles.AllowThousands);
+				}
+				return Convert.ChangeType(value, type);
+			}
+
+			/// <summary>
 			///   Gets an array of all the string values contained in an array argument.
 			/// </summary>
 			/// <param name="tag">Tag of the array argument.</param>
@@ -750,7 +885,7 @@ namespace System
 						if (mTagType[tag] == PropertyLookup.PropType.Single)
 						{
 							string value = GetValues(tag)[0];
-							mTagProperties[tag].SetValue(settingsObject, Convert.ChangeType(value, mTagProperties[tag].PropertyType));
+							mTagProperties[tag].SetValue(settingsObject, ConvertValue(value, mTagProperties[tag].PropertyType));
 						}
 						else if (mTagType[tag] == PropertyLookup.PropType.Array)
 						{
@@ -758,7 +893,7 @@ namespace System
 							Type elementType = mTagProperties[tag].PropertyType.GetElementType();
 							Array arrayList = Array.CreateInstance(elementType, values.Length);
 							for (int i = 0; i < values.Length; i++)
-								arrayList.SetValue(Convert.ChangeType(values[i], elementType), i);
+								arrayList.SetValue(ConvertValue(values[i], elementType), i);
 							mTagProperties[tag].SetValue(settingsObject, arrayList);
 						}
 						else

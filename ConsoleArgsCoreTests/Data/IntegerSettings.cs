@@ -20,6 +20,9 @@ namespace ConsoleArgsCoreTests.Data
 		[Argument('i', "List of integers.", Word = "input")]
 		public int[] Integers { get; set; }
 
+		[Argument('j', "List of unsigned integers.", Word = "jstuff")]
+		public uint[] UInts { get; set; }
+
 		[Argument('q', "List of integers.", Word = "byte")]
 		public byte UInt8Value { get; set; }
 
