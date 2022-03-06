@@ -53,12 +53,15 @@ public string InputFile { get; set; }
 public bool PreserveHierarchy { get; set; }
 ```
 
-When the class is passed into the Populate method it will store true in 'PreserveHierarchy' if a '-h' argument was found. It will also store a string value in 'InputFile' if a '-i' is found followed by a value. The value can be attached using an '=' character or a space. So both of these lines would be valid:
+When the class is passed into the Populate method it will store true in 'PreserveHierarchy' if a '-h' argument was found. It will also store a string value in 'InputFile' if a '-i' is found followed by a value. The value can be attached using an '=' character or a space. The word assigned in the attribute can also be used instead of the single letter. The class supports both '-' and '--' syntax. So all of the following lines are valid:
 
 ```
 dotnet ./test.dll -h -i test.xml
-
 dotnet ./test.dll -i=test.xml
+dotnet ./test.dll --i=test.xml
+dotnet ./test.dll --input=test.xml
+dotnet ./test.dll -input=test.xml
+dotnet ./test.dll --input test.xml
 
 ```
 
