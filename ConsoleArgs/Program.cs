@@ -22,7 +22,11 @@ namespace ConsoleArgs
 			CommandSettings settings = new CommandSettings();
 			ConsoleArgs<CommandSettings>.Populate(Environment.CommandLine,settings);
 
-			Console.WriteLine("Hello World!");
+			if (settings.GUI)
+			{
+				ConsoleArgs<CommandSettings>.GenerateHelpText(Console.BufferWidth);
+				return;
+			}
 		}
 	}
 }
