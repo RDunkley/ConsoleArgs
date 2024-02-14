@@ -1,4 +1,4 @@
-﻿//********************************************************************************************************************************
+//********************************************************************************************************************************
 // Filename:    ConsoleArgs.cs
 // Owner:       Richard Dunkley
 // Description: This class uses reflection to analyze a class for attributes that it uses to pull arguments from the command line
@@ -16,7 +16,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace System
 {
@@ -611,9 +610,14 @@ namespace System
 			private readonly string mCommandLine;
 
 			/// <summary>
-			///   Lookup table of the matches found in the command line.
+			///   Lookup table of the command line tags and values.
 			/// </summary>
-			private Dictionary<string, Match> mMatches = new Dictionary<string, Match>();
+			private Dictionary<string, string[]> mArgs;
+
+			/// <summary>
+			///   Lookup table of the command line tags and their corresponding index in the command line.
+			/// </summary>
+			private Dictionary<string, int> mArgsIndex;
 
 			/// <summary>
 			///   <see cref="PropertyInfo"/> containing the property and argument information on the type.
@@ -704,14 +708,19 @@ namespace System
 			/// <param name="type">Type to convert the value to.</param>
 			/// <returns>Object of the converted value.</returns>
 			private object ConvertValue(string value, Type type)
-            {
+			{
+				if (type == typeof(sbyte))
+				{
+					// Attempt to parse the number as just an integer.
+					return sbyte.Parse(value.Replace("_", ""), NumberStyles.Integer | NumberStyles.AllowThousands);
+				}
 				if (type == typeof(byte))
 				{
 					if(value.Length > 1 && char.ToLower(value[value.Length - 1]) == 'b')
-                    {
+					{
 						// Number is a binary number (01101b).
 						return (byte)ConvertBinaryNumber(value.Substring(0, value.Length - 1).Replace("_", ""), 8);
-                    }
+					}
 					else if (value.Length > 1 && char.ToLower(value[value.Length - 1]) == 'h')
 					{
 						// Number is a hexadecimal type 1 number (FFh).
@@ -725,6 +734,11 @@ namespace System
 
 					// Attempt to parse the number as just an integer.
 					return byte.Parse(value.Replace("_", ""), NumberStyles.Integer | NumberStyles.AllowThousands);
+				}
+				if (type == typeof(short))
+				{
+					// Attempt to parse the number as just an integer.
+					return short.Parse(value.Replace("_", ""), NumberStyles.Integer | NumberStyles.AllowThousands);
 				}
 				if (type == typeof(ushort))
 				{
@@ -747,6 +761,11 @@ namespace System
 					// Attempt to parse the number as just an integer.
 					return ushort.Parse(value.Replace("_", ""), NumberStyles.Integer | NumberStyles.AllowThousands);
 				}
+				if (type == typeof(int))
+				{
+					// Attempt to parse the number as just an integer.
+					return int.Parse(value.Replace("_", ""), NumberStyles.Integer | NumberStyles.AllowThousands);
+				}
 				if (type == typeof(uint))
 				{
 					if (value.Length > 1 && char.ToLower(value[value.Length - 1]) == 'b')
@@ -767,6 +786,11 @@ namespace System
 
 					// Attempt to parse the number as just an integer.
 					return uint.Parse(value.Replace("_", ""), NumberStyles.Integer | NumberStyles.AllowThousands);
+				}
+				if (type == typeof(long))
+				{
+					// Attempt to parse the number as just an integer.
+					return long.Parse(value.Replace("_", ""), NumberStyles.Integer | NumberStyles.AllowThousands);
 				}
 				if (type == typeof(ulong))
 				{
@@ -789,21 +813,11 @@ namespace System
 					// Attempt to parse the number as just an integer.
 					return ulong.Parse(value.Replace("_", ""), NumberStyles.Integer | NumberStyles.AllowThousands);
 				}
+				if(type == typeof(TimeSpan))
+				{
+					return TimeSpan.Parse(value);
+				}
 				return Convert.ChangeType(value, type);
-			}
-
-			/// <summary>
-			///   Gets an array of all the string values contained in an array argument.
-			/// </summary>
-			/// <param name="tag">Tag of the array argument.</param>
-			/// <returns>Array of the string values.</returns>
-			private string[] GetValues(string tag)
-			{
-				int count = mMatches[tag].Groups["value"].Captures.Count;
-				string[] returnArray = new string[count];
-				for (int i = 0; i < count; i++)
-					returnArray[i] = mMatches[tag].Groups["value"].Captures[i].Value;
-				return returnArray;
 			}
 
 			/// <summary>
@@ -815,19 +829,19 @@ namespace System
 			/// </exception>
 			private void FindProperties(bool throwErrorOnNotFound)
 			{
-				foreach(string tag in mMatches.Keys)
+				foreach(string tag in mArgs.Keys)
 				{
-					int keyIndex = mMatches[tag].Groups["tag"].Index;
+					int keyIndex = mArgsIndex[tag];
 					PropertyLookup.PropType propType = mProps.GetPropertyType(tag);
 					if (propType == PropertyLookup.PropType.Single)
 					{
-						if (mMatches[tag].Groups["value"].Captures.Count == 0)
+						if (mArgs[tag].Length == 0)
 						{
 							// Single found, but no following value was present.
 							string[] lines = GenerateErrorString(mCommandLine, keyIndex);
 							throw new InvalidOperationException(string.Format("ERROR: Found a tag ({0}) corresponding to a single value, but no value was found after the tag (Ex: --tag <value> or --tag=<value>).\n{1}\n{2}", keyIndex, lines[0], lines[1]));
 						}
-						else if(mMatches[tag].Groups["value"].Captures.Count != 1)
+						else if(mArgs[tag].Length != 1)
 						{
 							// Single found, but multiple values are present.
 							string[] lines = GenerateErrorString(mCommandLine, keyIndex);
@@ -841,8 +855,8 @@ namespace System
 					}
 					else if(propType == PropertyLookup.PropType.Flag)
 					{
-						int count = mMatches[tag].Groups["value"].Captures.Count;
-						if (count > 1 || (count == 1 && mMatches[tag].Groups["value"].Captures[0].Value != string.Empty))
+						int count = mArgs[tag].Length;
+						if (count > 0)
 						{
 							// Flag found, but a value was also present.
 							string[] lines = GenerateErrorString(mCommandLine, keyIndex);
@@ -871,6 +885,154 @@ namespace System
 			}
 
 			/// <summary>
+			///   Gets the text inside a quoted region.
+			/// </summary>
+			/// <param name="commandLine">Command line being parsed.</param>
+			/// <param name="index">Index of the start of the quote (including the quoted character).</param>
+			/// <param name="quotedText">Return text in the quoted region (not including the quote characters).</param>
+			/// <returns>Index in <paramref name="commandLine"/> following the end quote character. Can be equal to <paramref name="commandLine"/>.Length if the quoted region went to the end of the line.</returns>
+			private static int GetQuotedText(string commandLine, int index, out string quotedText)
+			{
+				var quoteChar = commandLine[index++];
+
+				int start = index;
+				while (index < commandLine.Length)
+				{
+					if (commandLine[index] == quoteChar)
+					{
+						quotedText = commandLine.Substring(start, index - start);
+						return index + 1;
+					}
+					index++;
+				}
+
+				// End of command line reached before end quote was found.
+				quotedText = null;
+				return commandLine.Length;
+			}
+
+			/// <summary>
+			///   Gets a tag from the command line starting at <paramref name="index"/>.
+			/// </summary>
+			/// <param name="commandLine">Command line currently being parsed.</param>
+			/// <param name="index">Index in the command line of the starting '-' representing a tag.</param>
+			/// <param name="tag">Tag value parsed from <paramref name="commandLine"/>. Can be single character or whole word.</param>
+			/// <returns>Index to the value starting after the tag. This is after the space or '=' following the tag.</returns>
+			/// <remarks>Will search for --tag or -tag values.</remarks>
+			/// <exception cref="InvalidOperationException">An invalid tag was found (partial or invalid characters in the tag.</exception>
+			private static int GetTag(string commandLine, int index, out string tag)
+			{
+				if (index == commandLine.Length)
+					throw new InvalidOperationException($"A '-' was found at index {index - 1}, but it at the end of the command line without an actual tag.");
+
+				int tagStart = index - 1;
+				if (commandLine[index] == '-')
+				{
+					// Skip the additional '-'.
+					index++;
+				}
+
+				// Check that first character is a letter.
+				if (!char.IsLetter(commandLine[index]))
+					throw new InvalidOperationException($"A '-' or '--' was found at index {tagStart}, but the first character of the argument tag ({commandLine[index]}) is not a letter. The first character must be a letter.");
+
+				// Check that additional characters are letters or numbers.
+				int start = index;
+				index++; // Skip the first letter since it was checked above.
+				while (index < commandLine.Length)
+				{
+					if (!char.IsLetterOrDigit(commandLine[index]))
+					{
+						if (char.IsWhiteSpace(commandLine[index]) || commandLine[index] == '=')
+						{
+							// Found a valid tag.
+							tag = commandLine.Substring(start, index - start);
+							return index + 1;
+						}
+						throw new InvalidOperationException($"A '-' or '--' was found at index {tagStart}, but the {index - start} character of the argument tag ({commandLine[index]}) is not a letter or digit. The first character must be a letter, but all other characters in the tag must be a letter or number.");
+					}
+					index++;
+				}
+
+				tag = commandLine.Substring(start, index - start);
+				return commandLine.Length;
+			}
+
+			/// <summary>
+			///   Gets the values after a tag.
+			/// </summary>
+			/// <param name="commandLine">Command line to be parsed.</param>
+			/// <param name="index">Index into <paramref name="commandLine"/> to begin looking for the values at.</param>
+			/// <param name="values">Array of values to return.</param>
+			/// <returns>One more than the final character in the values. This allows the caller to continue to parse the next tag from this point.</returns>
+			/// <remarks>This will keep pulling the following characters until the next tag or end of line is found.</remarks>
+			/// <exception cref="InvalidOperationException">A quoted region was started (using ',", or `, but the end was never found.</exception>
+			private static int GetValues(string commandLine, int index, out string[] values)
+			{
+				var list = new List<string>();
+				int start = index;
+				while (index < commandLine.Length)
+				{
+					if (commandLine[index] == '"' || commandLine[index] == '\'' || commandLine[index] == '`')
+					{
+						// Quoted value found.
+						int end = GetQuotedText(commandLine, index, out string quotedText);
+						if (quotedText == null)
+							throw new InvalidOperationException($"Unable to find the end of the quote starting with character {commandLine[index]} at index {index}");
+						list.Add(quotedText.Trim());
+						start = end;
+						index = end;
+					}
+					else if (commandLine[index] == ',')
+					{
+						// Next value so finish the previous if it wasn't already added (quoted text).
+						if (start != index)
+						{
+							var sub = commandLine.Substring(start, index - start);
+							if(!string.IsNullOrWhiteSpace(sub))
+								list.Add(sub.Trim());
+						}
+						index++;
+						start = index;
+					}
+					else if (commandLine[index] == '-')
+					{
+						// We can back index here because we know that a tag has already been found since we are looking for values.
+						if (char.IsWhiteSpace(commandLine[index - 1]))
+						{
+							// Next tag so we are finished with the values.
+							if (start != index)
+							{
+								var lastString = commandLine.Substring(start, index - start);
+								if (!string.IsNullOrWhiteSpace(lastString))
+									list.Add(lastString.Trim());
+							}
+							values = list.ToArray();
+							return index;
+						}
+
+						// Ignore since it must be a '-' embedded in argument value.
+						index++;
+					}
+					else
+					{
+						// Character is part of a value so skip it.
+						index++;
+					}
+				}
+
+				// End of command line reached.
+				if (start != index)
+				{
+					var finalString = commandLine.Substring(start, index - start);
+					if (!string.IsNullOrWhiteSpace(finalString))
+						list.Add(finalString.Trim());
+				}
+				values = list.ToArray();
+				return commandLine.Length;
+			}
+
+			/// <summary>
 			///   Populates the properties in the <paramref name="settingsObject"/>.
 			/// </summary>
 			/// <param name="settingsObject">Object to populate the properties of.</param>
@@ -881,15 +1043,15 @@ namespace System
 				{
 					try
 					{
-						int keyIndex = mMatches[tag].Groups["tag"].Index;
+						int keyIndex = mArgsIndex[tag];
 						if (mTagType[tag] == PropertyLookup.PropType.Single)
 						{
-							string value = GetValues(tag)[0];
+							string value = mArgs[tag][0];
 							mTagProperties[tag].SetValue(settingsObject, ConvertValue(value, mTagProperties[tag].PropertyType));
 						}
 						else if (mTagType[tag] == PropertyLookup.PropType.Array)
 						{
-							string[] values = GetValues(tag);
+							string[] values = mArgs[tag];
 							Type elementType = mTagProperties[tag].PropertyType.GetElementType();
 							Array arrayList = Array.CreateInstance(elementType, values.Length);
 							for (int i = 0; i < values.Length; i++)
@@ -914,26 +1076,37 @@ namespace System
 			}
 
 			/// <summary>
-			///   Uses regular expressions to find arguments in the command line and generate the <see cref="mMatches"/> lookup table.
+			///   Parses the command line to obtain the tags and values.
 			/// </summary>
+			/// <exception cref="InvalidOperationException">Invalid arguments were found on the command line.</exception>
 			private void TokenizeCommandLine()
 			{
-				// -(-)?([A-Za-z][A-Za-z0-9]*)+((( )*\=( )*|( ))(\"([^\"]*)\"|([^-,\s][^,\s]*))((\s)*,(\s)*(\"([^\"]*)\"|([^,\s]*)))*)?
-				string pattern = " -(-)?" + // Opening --
-					"(?<tag>[\\p{Lu}\\p{Ll}\\p{Lt}\\p{Lm}\\p{Lo}][\\p{Lu}\\p{Ll}\\p{Lt}\\p{Lm}\\p{Lo}\\p{Nl}\\p{Mn}\\p{Mc}\\p{Nd}\\p{Pc}\\p{Cf}]*)+" + // tag
-					"(((\\s)*\\=(\\s)*|(\\s))" + // ' = ' option
-										 //"(?<value>\"[^\"]*\"|([^-,\\s][^,\\s]*)|)" + // 1st value.
-					"(\"(?<value>[^\"]*)\"|(?<value>[^-,\\s][^,\\s]*))" + // 1st value.
-					"((\\s)*,(\\s)*(\"(?<value>[^\"]*)\"|(?<value>[^,\\s]*)))*)?"; // other values.
-				Regex r = new Regex(pattern, RegexOptions.Singleline|RegexOptions.ExplicitCapture);
-
-				Match m = r.Match(mCommandLine);
-				while(m.Success)
+				var commandLine = mCommandLine;
+				mArgs = new Dictionary<string, string[]>();
+				mArgsIndex = new Dictionary<string, int>();
+				int index = 0;
+				bool firstTag = true;
+				while(index < commandLine.Length)
 				{
-					if (mMatches.ContainsKey(m.Groups["tag"].Value))
-						throw new InvalidOperationException();
-					mMatches.Add(m.Groups["tag"].Value, m);
-					m = m.NextMatch();
+					if (commandLine[index] == '-')
+					{
+						firstTag = false;
+						var start = index;
+						index = GetTag(commandLine, index + 1, out string tag);
+						index = GetValues(commandLine, index, out string[] values);
+						if (mArgs.ContainsKey(tag))
+							throw new InvalidOperationException($"A second tag was found at index {start}, only one tag is allowed in the command line arguments.");
+						mArgs.Add(tag, values);
+						mArgsIndex.Add(tag, start);
+					}
+					else
+					{
+						if(!firstTag)
+							throw new InvalidOperationException($"A character ({commandLine[index]}) was found at index {index}, but it wasn't preceeded by a tag value.");
+
+						// If we haven't seen the first tag then it is probably the executable in the command.
+						index++;
+					}
 				}
 			}
 
