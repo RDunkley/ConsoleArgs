@@ -716,21 +716,12 @@ namespace System
 				}
 				if (type == typeof(byte))
 				{
-					if(value.Length > 1 && char.ToLower(value[value.Length - 1]) == 'b')
-					{
-						// Number is a binary number (01101b).
-						return (byte)ConvertBinaryNumber(value.Substring(0, value.Length - 1).Replace("_", ""), 8);
-					}
-					else if (value.Length > 1 && char.ToLower(value[value.Length - 1]) == 'h')
-					{
-						// Number is a hexadecimal type 1 number (FFh).
+					if (value.Length > 1 && char.ToLower(value[value.Length - 1]) == 'h') // Number is a hexadecimal type 1 number (FFh).
 						return byte.Parse(value.Substring(0, value.Length - 1).Replace("_", ""), NumberStyles.AllowHexSpecifier);
-					}
-					if (value.Length > 2 && value[0] == '0' && char.ToLower(value[1]) == 'x')
-					{
-						// Number is specified as a hexadecimal type 2 number (0xFF).
+					if (value.Length > 2 && value[0] == '0' && char.ToLower(value[1]) == 'x') // Number is specified as a hexadecimal type 2 number (0xFF).
 						return byte.Parse(value.Substring(2).Replace("_", ""), NumberStyles.AllowHexSpecifier);
-					}
+					if (value.Length > 1 && char.ToLower(value[value.Length - 1]) == 'b') // Number is a binary number (01101b).
+						return (byte)ConvertBinaryNumber(value.Substring(0, value.Length - 1).Replace("_", ""), 8);
 
 					// Attempt to parse the number as just an integer.
 					return byte.Parse(value.Replace("_", ""), NumberStyles.Integer | NumberStyles.AllowThousands);
@@ -742,21 +733,12 @@ namespace System
 				}
 				if (type == typeof(ushort))
 				{
-					if (value.Length > 1 && char.ToLower(value[value.Length - 1]) == 'b')
-					{
-						// Number is a binary number (01101b).
-						return (ushort)ConvertBinaryNumber(value.Substring(0, value.Length - 1).Replace("_", ""), 16);
-					}
-					else if (value.Length > 1 && char.ToLower(value[value.Length - 1]) == 'h')
-					{
-						// Number is a hexadecimal type 1 number (FFh).
+					if (value.Length > 1 && char.ToLower(value[value.Length - 1]) == 'h') // Number is a hexadecimal type 1 number (FFh).
 						return ushort.Parse(value.Substring(0, value.Length - 1).Replace("_", ""), NumberStyles.AllowHexSpecifier);
-					}
-					if (value.Length > 2 && value[0] == '0' && char.ToLower(value[1]) == 'x')
-					{
-						// Number is specified as a hexadecimal type 2 number (0xFF).
+					if (value.Length > 2 && value[0] == '0' && char.ToLower(value[1]) == 'x') // Number is specified as a hexadecimal type 2 number (0xFF).
 						return ushort.Parse(value.Substring(2).Replace("_", ""), NumberStyles.AllowHexSpecifier);
-					}
+					if (value.Length > 1 && char.ToLower(value[value.Length - 1]) == 'b') // Number is a binary number (01101b).
+						return (ushort)ConvertBinaryNumber(value.Substring(0, value.Length - 1).Replace("_", ""), 16);
 
 					// Attempt to parse the number as just an integer.
 					return ushort.Parse(value.Replace("_", ""), NumberStyles.Integer | NumberStyles.AllowThousands);
@@ -768,21 +750,12 @@ namespace System
 				}
 				if (type == typeof(uint))
 				{
-					if (value.Length > 1 && char.ToLower(value[value.Length - 1]) == 'b')
-					{
-						// Number is a binary number (01101b).
-						return (uint)ConvertBinaryNumber(value.Substring(0, value.Length - 1).Replace("_", ""), 32);
-					}
-					else if (value.Length > 1 && char.ToLower(value[value.Length - 1]) == 'h')
-					{
-						// Number is a hexadecimal type 1 number (FFh).
+					if (value.Length > 1 && char.ToLower(value[value.Length - 1]) == 'h') // Number is a hexadecimal type 1 number (FFh).
 						return uint.Parse(value.Substring(0, value.Length - 1).Replace("_", ""), NumberStyles.AllowHexSpecifier);
-					}
-					if (value.Length > 2 && value[0] == '0' && char.ToLower(value[1]) == 'x')
-					{
-						// Number is specified as a hexadecimal type 2 number (0xFF).
+					if (value.Length > 2 && value[0] == '0' && char.ToLower(value[1]) == 'x') // Number is specified as a hexadecimal type 2 number (0xFF).
 						return uint.Parse(value.Substring(2).Replace("_", ""), NumberStyles.AllowHexSpecifier);
-					}
+					if (value.Length > 1 && char.ToLower(value[value.Length - 1]) == 'b') // Number is a binary number (01101b).
+						return (uint)ConvertBinaryNumber(value.Substring(0, value.Length - 1).Replace("_", ""), 32);
 
 					// Attempt to parse the number as just an integer.
 					return uint.Parse(value.Replace("_", ""), NumberStyles.Integer | NumberStyles.AllowThousands);
@@ -794,21 +767,12 @@ namespace System
 				}
 				if (type == typeof(ulong))
 				{
-					if (value.Length > 1 && char.ToLower(value[value.Length - 1]) == 'b')
-					{
-						// Number is a binary number (01101b).
-						return ConvertBinaryNumber(value.Substring(0, value.Length - 1).Replace("_", ""), 64);
-					}
-					else if (value.Length > 1 && char.ToLower(value[value.Length - 1]) == 'h')
-					{
-						// Number is a hexadecimal type 1 number (FFh).
+					if (value.Length > 1 && char.ToLower(value[value.Length - 1]) == 'h') // Number is a hexadecimal type 1 number (FFh).
 						return ulong.Parse(value.Substring(0, value.Length - 1).Replace("_", ""), NumberStyles.AllowHexSpecifier);
-					}
-					if (value.Length > 2 && value[0] == '0' && char.ToLower(value[1]) == 'x')
-					{
-						// Number is specified as a hexadecimal type 2 number (0xFF).
+					if (value.Length > 2 && value[0] == '0' && char.ToLower(value[1]) == 'x') // Number is specified as a hexadecimal type 2 number (0xFF).
 						return ulong.Parse(value.Substring(2).Replace("_", ""), NumberStyles.AllowHexSpecifier);
-					}
+					if (value.Length > 1 && char.ToLower(value[value.Length - 1]) == 'b') // Number is a binary number (01101b).
+						return ConvertBinaryNumber(value.Substring(0, value.Length - 1).Replace("_", ""), 64);
 
 					// Attempt to parse the number as just an integer.
 					return ulong.Parse(value.Replace("_", ""), NumberStyles.Integer | NumberStyles.AllowThousands);
