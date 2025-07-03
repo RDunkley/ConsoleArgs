@@ -4,7 +4,7 @@
 // Description: This class uses reflection to analyze a class for attributes that it uses to pull arguments from the command line
 //              and place the arguments in the properties of the class.
 //********************************************************************************************************************************
-// Copyright © Richard Dunkley 2022
+// Copyright © Richard Dunkley 2025
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
 // License. You may obtain a copy of the License at: http://www.apache.org/licenses/LICENSE-2.0  Unless required by applicable
@@ -15,6 +15,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace System
@@ -168,6 +169,19 @@ namespace System
 		}
 
 		#endregion Methods
+	}
+
+	/// <summary>
+	///   Static class to access native methods for retrieving the command line arguments.
+	/// </summary>
+	public static class Kernel32
+	{
+		/// <summary>
+		///   Pinvokes into kernel32.dll to retrieve the command line arguments for the current process when running in Windows.
+		/// </summary>
+		/// <returns>Pointer to command line string.</returns>
+		[DllImport("kernel32.dll", CharSet = CharSet.Auto, EntryPoint = "GetCommandLine")]
+		public static extern IntPtr Win_GetCommandLine();
 	}
 
 	/// <summary>
@@ -842,7 +856,7 @@ namespace System
 						if(throwErrorOnNotFound)
 						{
 							string[] lines = GenerateErrorString(mCommandLine, keyIndex);
-							throw new InvalidOperationException(string.Format("ERROR: Found a tag ({0}), but it does not appear to be a valid command line argument.\n{1}\n{2}", keyIndex, lines[0], lines[1]));
+							throw new InvalidOperationException($"ERROR: Found a tag ({tag}), but it does not appear to be a valid command line argument.\n{lines[0]}\n{lines[1]}");
 						}
 					}
 				}
@@ -1281,6 +1295,33 @@ namespace System
 			PropertyLookup propTable = new PropertyLookup(typeof(T));
 			ConsoleArgInfo argInfo = new ConsoleArgInfo(commandLine, propTable, throwErrorOnNotFound);
 			argInfo.PopulateProperties(settingsObject);
+		}
+
+		/// <summary>
+		///   Gets the full command line used to start the application.
+		/// </summary>
+		/// <returns>Full command line including the executable.</returns>
+		/// <exception cref="PlatformNotSupportedException">The current platform is not supported.</exception>
+		/// <remarks>
+		///   The .Net API for obtaining the command line (Environment.CommandLine) will sometimes modify or reformat the command line. Removing or changing quotation marks.
+		///   This method will return the full unmodified command line obtained from the operating system's corresponding API.
+		/// </remarks>
+		public static string GetFullCommandLine()
+		{
+			IntPtr cmdLinePtr;
+			if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+			{
+				cmdLinePtr = Kernel32.Win_GetCommandLine();
+				if (cmdLinePtr == IntPtr.Zero)
+					return null;
+				return Marshal.PtrToStringAuto(cmdLinePtr);
+			}
+			else if (Environment.OSVersion.Platform == PlatformID.Unix || Environment.OSVersion.Platform == PlatformID.MacOSX)
+			{
+				return File.ReadAllText("/proc/self/cmdline").Replace('\0', ' ');
+			}
+			else
+				throw new PlatformNotSupportedException("The current platform is not supported for retrieving the command line.");
 		}
 
 		#endregion Methods
