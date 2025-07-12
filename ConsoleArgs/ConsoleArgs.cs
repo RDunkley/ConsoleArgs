@@ -723,12 +723,12 @@ namespace System
 			/// <returns>Object of the converted value.</returns>
 			private object ConvertValue(string value, Type type)
 			{
-				if (type == typeof(sbyte))
+				if (type == typeof(sbyte) || type == typeof(sbyte?))
 				{
 					// Attempt to parse the number as just an integer.
 					return sbyte.Parse(value.Replace("_", ""), NumberStyles.Integer | NumberStyles.AllowThousands);
 				}
-				if (type == typeof(byte))
+				if (type == typeof(byte) || type == typeof(byte?))
 				{
 					if (value.Length > 1 && char.ToLower(value[value.Length - 1]) == 'h') // Number is a hexadecimal type 1 number (FFh).
 						return byte.Parse(value.Substring(0, value.Length - 1).Replace("_", ""), NumberStyles.AllowHexSpecifier);
@@ -740,12 +740,12 @@ namespace System
 					// Attempt to parse the number as just an integer.
 					return byte.Parse(value.Replace("_", ""), NumberStyles.Integer | NumberStyles.AllowThousands);
 				}
-				if (type == typeof(short))
+				if (type == typeof(short) || type == typeof(short?))
 				{
 					// Attempt to parse the number as just an integer.
 					return short.Parse(value.Replace("_", ""), NumberStyles.Integer | NumberStyles.AllowThousands);
 				}
-				if (type == typeof(ushort))
+				if (type == typeof(ushort) || type == typeof(ushort?))
 				{
 					if (value.Length > 1 && char.ToLower(value[value.Length - 1]) == 'h') // Number is a hexadecimal type 1 number (FFh).
 						return ushort.Parse(value.Substring(0, value.Length - 1).Replace("_", ""), NumberStyles.AllowHexSpecifier);
@@ -757,12 +757,12 @@ namespace System
 					// Attempt to parse the number as just an integer.
 					return ushort.Parse(value.Replace("_", ""), NumberStyles.Integer | NumberStyles.AllowThousands);
 				}
-				if (type == typeof(int))
+				if (type == typeof(int) || type == typeof(int?))
 				{
 					// Attempt to parse the number as just an integer.
 					return int.Parse(value.Replace("_", ""), NumberStyles.Integer | NumberStyles.AllowThousands);
 				}
-				if (type == typeof(uint))
+				if (type == typeof(uint) || type == typeof(uint?))
 				{
 					if (value.Length > 1 && char.ToLower(value[value.Length - 1]) == 'h') // Number is a hexadecimal type 1 number (FFh).
 						return uint.Parse(value.Substring(0, value.Length - 1).Replace("_", ""), NumberStyles.AllowHexSpecifier);
@@ -774,12 +774,12 @@ namespace System
 					// Attempt to parse the number as just an integer.
 					return uint.Parse(value.Replace("_", ""), NumberStyles.Integer | NumberStyles.AllowThousands);
 				}
-				if (type == typeof(long))
+				if (type == typeof(long) || type == typeof(long?))
 				{
 					// Attempt to parse the number as just an integer.
 					return long.Parse(value.Replace("_", ""), NumberStyles.Integer | NumberStyles.AllowThousands);
 				}
-				if (type == typeof(ulong))
+				if (type == typeof(ulong) || type == typeof(ulong?))
 				{
 					if (value.Length > 1 && char.ToLower(value[value.Length - 1]) == 'h') // Number is a hexadecimal type 1 number (FFh).
 						return ulong.Parse(value.Substring(0, value.Length - 1).Replace("_", ""), NumberStyles.AllowHexSpecifier);
@@ -791,7 +791,7 @@ namespace System
 					// Attempt to parse the number as just an integer.
 					return ulong.Parse(value.Replace("_", ""), NumberStyles.Integer | NumberStyles.AllowThousands);
 				}
-				if(type == typeof(TimeSpan))
+				if(type == typeof(TimeSpan) || type == typeof(TimeSpan?))
 				{
 					return TimeSpan.Parse(value);
 				}
